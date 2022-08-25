@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 
-namespace Dotnetos.AsyncExpert.Homework.Module01.Benchmark
+namespace Benchmark
 {
+    [MemoryDiagnoser]
     [DisassemblyDiagnoser(exportCombinedDisassemblyReport: true)]
     public class FibonacciCalc
     {
@@ -14,11 +15,14 @@ namespace Dotnetos.AsyncExpert.Homework.Module01.Benchmark
         // 
         // You can use the discussion panel to compare your results with other students
 
+        private readonly Dictionary<ulong,ulong> _cache = new();
+
         [Benchmark(Baseline = true)]
         [ArgumentsSource(nameof(Data))]
         public ulong Recursive(ulong n)
         {
-            if (n == 1 || n == 2) return 1;
+            if (n <= 1)
+                return n;
             return Recursive(n - 2) + Recursive(n - 1);
         }
 
@@ -26,14 +30,38 @@ namespace Dotnetos.AsyncExpert.Homework.Module01.Benchmark
         [ArgumentsSource(nameof(Data))]
         public ulong RecursiveWithMemoization(ulong n)
         {
-            return 0;
+            if(_cache.ContainsKey(n))
+                return _cache[n];
+
+            if (n <= 1)
+            {
+                _cache.Add(n, n);
+                return n;
+            }
+
+            var result = RecursiveWithMemoization(n - 2) + RecursiveWithMemoization(n - 1);
+            _cache.Add(n, result);
+
+            return result;
         }
         
         [Benchmark]
         [ArgumentsSource(nameof(Data))]
         public ulong Iterative(ulong n)
         {
-            return 0;
+            if (n <= 1)
+                return n;
+
+            ulong result = 0;
+            ulong lastResult = 1;
+            for (ulong i = 0; i < n; i++)
+            {
+                var preLastResult = lastResult;
+                lastResult = result;
+
+                result = preLastResult + lastResult;
+            }
+            return result;
         }
 
         public IEnumerable<ulong> Data()
