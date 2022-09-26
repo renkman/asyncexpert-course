@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using OperationCanceledException = System.OperationCanceledException;
 
 namespace AsyncAwaitExercises.Core
 {
@@ -22,8 +23,34 @@ namespace AsyncAwaitExercises.Core
             // * `HttpClient.GetStringAsync` does not accept cancellation token (use `GetAsync` instead)
             // * you may use `EnsureSuccessStatusCode()` method
 
-            return string.Empty;
-        }
+            if (maxTries < 2)
+                throw new ArgumentException($"{nameof(maxTries)} must be at least 2");
 
+            const int delay = 1000;
+            const int b = 2;
+            var tries = 0;
+            Exception lastException = null;
+
+            while (tries < maxTries)
+            {
+                try
+                {
+                    var response = await client.GetAsync(url, token);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync(token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    await Task.Delay(delay * (int)Math.Pow(b, tries++), token);
+                    lastException = e;
+                }
+            }
+
+            throw lastException!;
+        }
     }
 }
