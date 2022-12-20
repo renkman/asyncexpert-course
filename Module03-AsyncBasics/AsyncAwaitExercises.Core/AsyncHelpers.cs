@@ -43,9 +43,9 @@ namespace AsyncAwaitExercises.Core
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync(token);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException e)
                 {
-                    throw;
+                    throw e;
                 }
                 catch (Exception e)
                 {
@@ -57,6 +57,12 @@ namespace AsyncAwaitExercises.Core
             }
 
             throw lastException!;
+        }
+
+        private static ReadOnlySpan<byte> Test()
+        {
+            
+            return data;
         }
     }
 }
